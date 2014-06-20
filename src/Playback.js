@@ -6,13 +6,22 @@ L.Playback = L.Playback.Clock.extend({
             Tick : L.Playback.Tick,
             Clock : L.Playback.Clock,
             Util : L.Playback.Util,
+            
             TracksLayer : L.Playback.TracksLayer,
-            Control : L.Playback.Control
+            PlayControl : L.Playback.PlayControl,
+            DateControl : L.Playback.DateControl,
+            SliderControl : L.Playback.SliderControl
         },
 
         options : {
             tracksLayer : true,
-            control : true
+            
+            playControl: false,
+            dateControl: false,
+            sliderControl: false,
+            
+            marker : {}, // marker options
+            maxInterpolationTime: 5*60*1000 // 5 minutes
         },
 
         initialize : function (map, geoJSON, callback, options) {
@@ -22,31 +31,42 @@ L.Playback = L.Playback.Clock.extend({
             this.tickPoints = [];
             if (geoJSON instanceof Array) {
                 for (var i = 0, len = geoJSON.length; i < len; i++) {
-                    this.tickPoints.push(new L.Playback.TickPoint(geoJSON[i], this.options.tickLen));
+                    this.tickPoints.push(new L.Playback.TickPoint(geoJSON[i], this.options));
                 }
             } else {
-                this.tickPoints.push(new L.Playback.TickPoint(geoJSON, this.options.tickLen));
+                this.tickPoints.push(new L.Playback.TickPoint(geoJSON, this.options));
             }
-            this.tick = new L.Playback.Tick(map, this.tickPoints);
+            this.tick = new L.Playback.Tick(map, this.tickPoints, this.options);
             L.Playback.Clock.prototype.initialize.call(this, this.tick, callback, this.options);
             if (this.options.tracksLayer) {
                 this.tracksLayer = new L.Playback.TracksLayer(map, geoJSON);
             }
-            if (this.options.control) {
-                this.control = new L.Playback.Control(this);
-                this.control.addTo(map);
+
+            if (this.options.playControl) {
+                this.playControl = new L.Playback.PlayControl(this);
+                this.playControl.addTo(map);
             }
+
+            if (this.options.sliderControl) {
+                this.sliderControl = new L.Playback.SliderControl(this);
+                this.sliderControl.addTo(map);
+            }
+
+            if (this.options.dateControl) {
+                this.dateControl = new L.Playback.DateControl(this);
+                this.dateControl.addTo(map);
+            }
+
         },
 
         addTracks : function (geoJSON) {
             console.log('addTracks');
             console.log(geoJSON);
-            var newTickPoint = new L.Playback.TickPoint(geoJSON, this.options.tickLen);
+            var newTickPoint = new L.Playback.TickPoint(geoJSON, this.options);
             this.tick.addTickPoint(newTickPoint, this.getTime());
-            $('#time-slider').slider('option', 'min', this.getStartTime());
-            $('#time-slider').slider('option', 'max', this.getEndTime());
+            
+            this.map.fire('playback:add_tracks');
         }
-
     });
 
 L.Map.addInitHook(function () {

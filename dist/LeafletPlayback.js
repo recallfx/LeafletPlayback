@@ -68,12 +68,12 @@ L.Playback.Util = L.Class.extend({
 L.Playback = L.Playback || {};
 
 L.Playback.MoveableMarker = L.Marker.extend({
+    
+  initialize: function (startLatLng, options) {
+    options = options || {};
+    L.Marker.prototype.initialize.call(this, startLatLng, options);
 
-  initialize: function (startLatLng) {
-    L.Marker.prototype.initialize.call(this, startLatLng, {
-    });
-
-    this.bindPopup('');
+    //this.bindPopup('');
   },
 
   move: function (latLng, transitionTime) {
@@ -89,7 +89,9 @@ L.Playback.MoveableMarker = L.Marker.extend({
       }
     }
     this.setLatLng(latLng);
-    this._popup.setContent(this._latlng.toString());
+    if (this._popup){
+        this._popup.setContent(this._latlng.toString());
+    }    
   }
 });
 
@@ -97,8 +99,10 @@ L.Playback = L.Playback || {};
 
 L.Playback.TickPoint = L.Class.extend({
 
-        initialize : function (geoJSON, tickLen) {
-            tickLen = tickLen || 250;
+        initialize : function (geoJSON, options) {
+            options = options || {};
+            var tickLen = options.tickLen || 250;
+            
             this._geoJSON = geoJSON;
             this._tickLen = tickLen;
             this._ticks = [];
@@ -161,7 +165,14 @@ L.Playback.TickPoint = L.Class.extend({
                 t += tickLen;
                 while (t < nextSampleTime) {
                     ratio = (t - currSampleTime) / (nextSampleTime - currSampleTime);
-                    this._ticks[t] = this._interpolatePoint(currSample, nextSample, ratio);
+                    
+                    if (nextSampleTime - currSampleTime > options.maxInterpolationTime){
+                        this._ticks[t] = currSample;
+                    }
+                    else {
+                        this._ticks[t] = this._interpolatePoint(currSample, nextSample, ratio);
+                    }
+                    
                     t += tickLen;
                 }
             }
@@ -238,7 +249,7 @@ L.Playback = L.Playback || {};
 
 L.Playback.Tick = L.Class.extend({
 
-        initialize : function (map, tickPoints) {
+        initialize : function (map, tickPoints, options) {
             this._map = map;
             if (tickPoints instanceof Array) {
                 this._tickPoints = tickPoints;
@@ -249,7 +260,7 @@ L.Playback.Tick = L.Class.extend({
             for (var i = 0, len = this._tickPoints.length; i < len; i++) {
                 var firstLngLat = this._tickPoints[i].getFirstTick();
                 var latLng = new L.LatLng(firstLngLat[1], firstLngLat[0]);
-                this._markers[i] = new L.Playback.MoveableMarker(latLng).addTo(map);
+                this._markers[i] = new L.Playback.MoveableMarker(latLng, options.marker).addTo(map);
             }
         },
 
@@ -257,7 +268,7 @@ L.Playback.Tick = L.Class.extend({
             this._tickPoints.push(tickPoint);
             var lngLat = tickPoint.tick(ms);
             var latLng = new L.LatLng(lngLat[1], lngLat[0]);
-            this._markers.push(new L.Playback.MoveableMarker(latLng).addTo(this._map));
+            this._markers.push(new L.Playback.MoveableMarker(latLng, options.marker).addTo(this._map));
         },
 
         tock : function (ms, transitionTime) {
@@ -265,6 +276,7 @@ L.Playback.Tick = L.Class.extend({
                 var lngLat = this._tickPoints[i].tick(ms);
                 var latLng = new L.LatLng(lngLat[1], lngLat[0]);
                 this._markers[i].move(latLng, transitionTime);
+                //this._markers[i].setLatLng(latLng);
             }
         },
 
@@ -414,7 +426,7 @@ L.Playback.TracksLayer = L.Class.extend({
             });
 
         var overlayControl = {
-            '<i class="icon-bullseye"></i> GPS Tracks' : this.layer
+            'GPS Tracks' : this.layer
         };
 
         L.control.layers(null, overlayControl, {
@@ -425,7 +437,89 @@ L.Playback.TracksLayer = L.Class.extend({
 });
 L.Playback = L.Playback || {};
 
-L.Playback.Control = L.Control.extend({
+L.Playback.DateControl = L.Control.extend({
+    options : {
+        position : 'bottomleft'
+    },
+
+    initialize : function (playback) {
+        this.playback = playback;
+    },
+
+    onAdd : function (map) {
+        this._container = L.DomUtil.create('div', 'leaflet-control-layers leaflet-control-layers-expanded');
+
+        var self = this;
+        var playback = this.playback;
+        var time = playback.getTime();
+
+        var datetime = L.DomUtil.create('div', 'datetimeControl', this._container);
+
+        // date time
+        this._date = L.DomUtil.create('p', '', datetime);
+        this._time = L.DomUtil.create('p', '', datetime);
+
+        this._date.innerHTML = L.Playback.Util.DateStr(time);
+        this._time.innerHTML = L.Playback.Util.TimeStr(time);
+
+        // setup callback
+        playback.addCallback(function (ms) {
+            self._date.innerHTML = L.Playback.Util.DateStr(ms);
+            self._time.innerHTML = L.Playback.Util.TimeStr(ms);
+        });
+
+        return this._container;
+    }
+});
+    
+L.Playback.PlayControl = L.Control.extend({
+    options : {
+        position : 'bottomright'
+    },
+
+    initialize : function (playback) {
+        this.playback = playback;
+    },
+
+    onAdd : function (map) {
+        this._container = L.DomUtil.create('div', 'leaflet-control-layers leaflet-control-layers-expanded');
+
+        var self = this;
+        var playback = this.playback;
+        playback.setSpeed(100);
+
+        var playControl = L.DomUtil.create('div', 'playControl', this._container);
+
+
+        this._button = L.DomUtil.create('button', '', playControl);
+        this._button.innerHTML = 'Play';
+
+
+        var stop = L.DomEvent.stopPropagation;
+
+        L.DomEvent
+        .on(this._button, 'click', stop)
+        .on(this._button, 'mousedown', stop)
+        .on(this._button, 'dblclick', stop)
+        .on(this._button, 'click', L.DomEvent.preventDefault)
+        .on(this._button, 'click', play, this);
+        
+        function play(){
+            if (playback.isPlaying()){
+                playback.stop();
+                self._button.innerHTML = 'Play';
+            }
+            else {
+                playback.start();
+                self._button.innerHTML = 'Stop';
+            }                
+        }
+
+        return this._container;
+    }
+});    
+    
+L.Playback.SliderControl = L.Control.extend({
         options : {
             position : 'bottomleft'
         },
@@ -439,17 +533,6 @@ L.Playback.Control = L.Control.extend({
 
             var self = this;
             var playback = this.playback;
-            var startTime = playback.getStartTime();
-
-            var datetime = L.DomUtil.create('div', 'datetime', this._container);
-
-            // date time
-            this._date = L.DomUtil.create('p', '', datetime);
-            this._time = L.DomUtil.create('p', '', datetime);
-
-            this._date.innerHTML = L.Playback.Util.DateStr(startTime);
-            this._time.innerHTML = L.Playback.Util.TimeStr(startTime);
-
 
             // slider
             this._slider = L.DomUtil.create('input', 'slider', this._container);
@@ -467,33 +550,28 @@ L.Playback.Control = L.Control.extend({
             .on(this._slider, 'click', L.DomEvent.preventDefault)
             //.on(this._slider, 'mousemove', L.DomEvent.preventDefault)
             .on(this._slider, 'change', onSliderChange, this)
-            .on(this._slider, 'mousemove', onSliderChange, this);
+            .on(this._slider, 'mousemove', onSliderChange, this);           
+  
 
             function onSliderChange(e) {
                 var val = Number(e.target.value);
                 playback.setCursor(val);
-                //time.innerHTML(new Date(val).toString());
-
-                self._date.innerHTML = L.Playback.Util.DateStr(val);
-                self._time.innerHTML = L.Playback.Util.TimeStr(val);
             }
 
             playback.addCallback(function (ms) {
-                self._date.innerHTML = L.Playback.Util.DateStr(ms);
-                self._time.innerHTML = L.Playback.Util.TimeStr(ms);
                 self._slider.value = ms;
+            });
+            
+            
+            map.on('playback:add_tracks', function(){
+                self._slider.min = playback.getStartTime();
+                self._slider.max = playback.getEndTime();
+                self._slider.value = playback.getTime();
             });
 
             return this._container;
-        },
-
-        _loadTracks : function (jsonString) {
-            var tracks = JSON.parse(jsonString);
-            self.playback.addTracks(tracks);
-            self.playback.tracksLayer.layer.addData(tracks);
         }
-
-    });
+    });      
 
 L.Playback = L.Playback.Clock.extend({
         statics : {
@@ -502,13 +580,22 @@ L.Playback = L.Playback.Clock.extend({
             Tick : L.Playback.Tick,
             Clock : L.Playback.Clock,
             Util : L.Playback.Util,
+            
             TracksLayer : L.Playback.TracksLayer,
-            Control : L.Playback.Control
+            PlayControl : L.Playback.PlayControl,
+            DateControl : L.Playback.DateControl,
+            SliderControl : L.Playback.SliderControl
         },
 
         options : {
             tracksLayer : true,
-            control : true
+            
+            playControl: false,
+            dateControl: false,
+            sliderControl: false,
+            
+            marker : {}, // marker options
+            maxInterpolationTime: 5*60*1000 // 5 minutes
         },
 
         initialize : function (map, geoJSON, callback, options) {
@@ -518,31 +605,42 @@ L.Playback = L.Playback.Clock.extend({
             this.tickPoints = [];
             if (geoJSON instanceof Array) {
                 for (var i = 0, len = geoJSON.length; i < len; i++) {
-                    this.tickPoints.push(new L.Playback.TickPoint(geoJSON[i], this.options.tickLen));
+                    this.tickPoints.push(new L.Playback.TickPoint(geoJSON[i], this.options));
                 }
             } else {
-                this.tickPoints.push(new L.Playback.TickPoint(geoJSON, this.options.tickLen));
+                this.tickPoints.push(new L.Playback.TickPoint(geoJSON, this.options));
             }
-            this.tick = new L.Playback.Tick(map, this.tickPoints);
+            this.tick = new L.Playback.Tick(map, this.tickPoints, this.options);
             L.Playback.Clock.prototype.initialize.call(this, this.tick, callback, this.options);
             if (this.options.tracksLayer) {
                 this.tracksLayer = new L.Playback.TracksLayer(map, geoJSON);
             }
-            if (this.options.control) {
-                this.control = new L.Playback.Control(this);
-                this.control.addTo(map);
+
+            if (this.options.playControl) {
+                this.playControl = new L.Playback.PlayControl(this);
+                this.playControl.addTo(map);
             }
+
+            if (this.options.sliderControl) {
+                this.sliderControl = new L.Playback.SliderControl(this);
+                this.sliderControl.addTo(map);
+            }
+
+            if (this.options.dateControl) {
+                this.dateControl = new L.Playback.DateControl(this);
+                this.dateControl.addTo(map);
+            }
+
         },
 
         addTracks : function (geoJSON) {
             console.log('addTracks');
             console.log(geoJSON);
-            var newTickPoint = new L.Playback.TickPoint(geoJSON, this.options.tickLen);
+            var newTickPoint = new L.Playback.TickPoint(geoJSON, this.options);
             this.tick.addTickPoint(newTickPoint, this.getTime());
-            $('#time-slider').slider('option', 'min', this.getStartTime());
-            $('#time-slider').slider('option', 'max', this.getEndTime());
+            
+            this.map.fire('playback:add_tracks');
         }
-
     });
 
 L.Map.addInitHook(function () {

@@ -17,7 +17,7 @@ L.Playback.TracksLayer = L.Class.extend({
             });
 
         var overlayControl = {
-            '<i class="icon-bullseye"></i> GPS Tracks' : this.layer
+            'GPS Tracks' : this.layer
         };
 
         L.control.layers(null, overlayControl, {

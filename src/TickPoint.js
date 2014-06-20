@@ -2,8 +2,10 @@ L.Playback = L.Playback || {};
 
 L.Playback.TickPoint = L.Class.extend({
 
-        initialize : function (geoJSON, tickLen) {
-            tickLen = tickLen || 250;
+        initialize : function (geoJSON, options) {
+            options = options || {};
+            var tickLen = options.tickLen || 250;
+            
             this._geoJSON = geoJSON;
             this._tickLen = tickLen;
             this._ticks = [];
@@ -66,7 +68,14 @@ L.Playback.TickPoint = L.Class.extend({
                 t += tickLen;
                 while (t < nextSampleTime) {
                     ratio = (t - currSampleTime) / (nextSampleTime - currSampleTime);
-                    this._ticks[t] = this._interpolatePoint(currSample, nextSample, ratio);
+                    
+                    if (nextSampleTime - currSampleTime > options.maxInterpolationTime){
+                        this._ticks[t] = currSample;
+                    }
+                    else {
+                        this._ticks[t] = this._interpolatePoint(currSample, nextSample, ratio);
+                    }
+                    
                     t += tickLen;
                 }
             }

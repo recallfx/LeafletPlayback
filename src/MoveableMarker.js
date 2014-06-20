@@ -1,12 +1,12 @@
 L.Playback = L.Playback || {};
 
 L.Playback.MoveableMarker = L.Marker.extend({
+    
+  initialize: function (startLatLng, options) {
+    options = options || {};
+    L.Marker.prototype.initialize.call(this, startLatLng, options);
 
-  initialize: function (startLatLng) {
-    L.Marker.prototype.initialize.call(this, startLatLng, {
-    });
-
-    this.bindPopup('');
+    //this.bindPopup('');
   },
 
   move: function (latLng, transitionTime) {
@@ -22,6 +22,8 @@ L.Playback.MoveableMarker = L.Marker.extend({
       }
     }
     this.setLatLng(latLng);
-    this._popup.setContent(this._latlng.toString());
+    if (this._popup){
+        this._popup.setContent(this._latlng.toString());
+    }    
   }
 });

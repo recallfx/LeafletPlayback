@@ -1,6 +1,88 @@
 L.Playback = L.Playback || {};
 
-L.Playback.Control = L.Control.extend({
+L.Playback.DateControl = L.Control.extend({
+    options : {
+        position : 'bottomleft'
+    },
+
+    initialize : function (playback) {
+        this.playback = playback;
+    },
+
+    onAdd : function (map) {
+        this._container = L.DomUtil.create('div', 'leaflet-control-layers leaflet-control-layers-expanded');
+
+        var self = this;
+        var playback = this.playback;
+        var time = playback.getTime();
+
+        var datetime = L.DomUtil.create('div', 'datetimeControl', this._container);
+
+        // date time
+        this._date = L.DomUtil.create('p', '', datetime);
+        this._time = L.DomUtil.create('p', '', datetime);
+
+        this._date.innerHTML = L.Playback.Util.DateStr(time);
+        this._time.innerHTML = L.Playback.Util.TimeStr(time);
+
+        // setup callback
+        playback.addCallback(function (ms) {
+            self._date.innerHTML = L.Playback.Util.DateStr(ms);
+            self._time.innerHTML = L.Playback.Util.TimeStr(ms);
+        });
+
+        return this._container;
+    }
+});
+    
+L.Playback.PlayControl = L.Control.extend({
+    options : {
+        position : 'bottomright'
+    },
+
+    initialize : function (playback) {
+        this.playback = playback;
+    },
+
+    onAdd : function (map) {
+        this._container = L.DomUtil.create('div', 'leaflet-control-layers leaflet-control-layers-expanded');
+
+        var self = this;
+        var playback = this.playback;
+        playback.setSpeed(100);
+
+        var playControl = L.DomUtil.create('div', 'playControl', this._container);
+
+
+        this._button = L.DomUtil.create('button', '', playControl);
+        this._button.innerHTML = 'Play';
+
+
+        var stop = L.DomEvent.stopPropagation;
+
+        L.DomEvent
+        .on(this._button, 'click', stop)
+        .on(this._button, 'mousedown', stop)
+        .on(this._button, 'dblclick', stop)
+        .on(this._button, 'click', L.DomEvent.preventDefault)
+        .on(this._button, 'click', play, this);
+        
+        function play(){
+            if (playback.isPlaying()){
+                playback.stop();
+                self._button.innerHTML = 'Play';
+            }
+            else {
+                playback.start();
+                self._button.innerHTML = 'Stop';
+            }                
+        }
+
+        return this._container;
+    }
+});    
+    
+L.Playback.SliderControl = L.Control.extend({
         options : {
             position : 'bottomleft'
         },
@@ -14,17 +96,6 @@ L.Playback.Control = L.Control.extend({
 
             var self = this;
             var playback = this.playback;
-            var startTime = playback.getStartTime();
-
-            var datetime = L.DomUtil.create('div', 'datetime', this._container);
-
-            // date time
-            this._date = L.DomUtil.create('p', '', datetime);
-            this._time = L.DomUtil.create('p', '', datetime);
-
-            this._date.innerHTML = L.Playback.Util.DateStr(startTime);
-            this._time.innerHTML = L.Playback.Util.TimeStr(startTime);
-
 
             // slider
             this._slider = L.DomUtil.create('input', 'slider', this._container);
@@ -42,30 +113,25 @@ L.Playback.Control = L.Control.extend({
             .on(this._slider, 'click', L.DomEvent.preventDefault)
             //.on(this._slider, 'mousemove', L.DomEvent.preventDefault)
             .on(this._slider, 'change', onSliderChange, this)
-            .on(this._slider, 'mousemove', onSliderChange, this);
+            .on(this._slider, 'mousemove', onSliderChange, this);           
+  
 
             function onSliderChange(e) {
                 var val = Number(e.target.value);
                 playback.setCursor(val);
-                //time.innerHTML(new Date(val).toString());
-
-                self._date.innerHTML = L.Playback.Util.DateStr(val);
-                self._time.innerHTML = L.Playback.Util.TimeStr(val);
             }
 
             playback.addCallback(function (ms) {
-                self._date.innerHTML = L.Playback.Util.DateStr(ms);
-                self._time.innerHTML = L.Playback.Util.TimeStr(ms);
                 self._slider.value = ms;
+            });
+            
+            
+            map.on('playback:add_tracks', function(){
+                self._slider.min = playback.getStartTime();
+                self._slider.max = playback.getEndTime();
+                self._slider.value = playback.getTime();
             });
 
             return this._container;
-        },
-
-        _loadTracks : function (jsonString) {
-            var tracks = JSON.parse(jsonString);
-            self.playback.addTracks(tracks);
-            self.playback.tracksLayer.layer.addData(tracks);
         }
-
-    });
+    });      
