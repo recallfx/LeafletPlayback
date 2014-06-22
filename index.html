@@ -3,69 +3,92 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Leafletplayback by recallfx</title>
-
+    <title>LeafletPlayback (recallfx) by recallfx</title>
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
     <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
   </head>
   <body>
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/recallfx/LeafletPlayback">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/recallfx/LeafletPlayback/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/recallfx/LeafletPlayback/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
+
     <div class="wrapper">
-      <header>
-        <h1>Leafletplayback</h1>
-        <p>This is a Leaflet plug-in that plays back points that have a time stamp synchronized to a clock.</p>
 
-        <p class="view"><a href="https://github.com/recallfx/LeafletPlayback">View the Project on GitHub <small>recallfx/LeafletPlayback</small></a></p>
-
-
-        <ul>
-          <li><a href="https://github.com/recallfx/LeafletPlayback/zipball/master">Download <strong>ZIP File</strong></a></li>
-          <li><a href="https://github.com/recallfx/LeafletPlayback/tarball/master">Download <strong>TAR Ball</strong></a></li>
-          <li><a href="https://github.com/recallfx/LeafletPlayback">View On <strong>GitHub</strong></a></li>
-        </ul>
-      </header>
       <section>
-        <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
+        <div id="title">
+          <h1>LeafletPlayback (recallfx)</h1>
+          <p>This is a Leaflet plug-in that plays back points that have a time stamp synchronized to a clock.</p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/recallfx">recallfx</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
+        </div>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+        <h1>
+<a name="leaflet-playback" class="anchor" href="#leaflet-playback"><span class="octicon octicon-link"></span></a>Leaflet Playback</h1>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
-</code></pre>
+<p>Leaflet Playback provides the ability to replay GPS Tracks in the form of GeoJSON objects. Rather than simply animating a marker along a polyline, the speed of the animation is synchroized to a clock. The playback functionality is similar to a video player--you can start and stop playback, change the playback speed, load GPS tracks, as well as set the playback time with a slider or calendar/time-picker widget.</p>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<h2>
+<a name="view-demo" class="anchor" href="#view-demo"><span class="octicon octicon-link"></span></a><a href="http://leafletplayback.theoutpost.io">View Demo</a>
+</h2>
 
-<h3>
-<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
+<p>This demo pre-loads some GPS GeoJSON tracks and lets you play them back.</p>
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+<h2>
+<a name="gps-data-format" class="anchor" href="#gps-data-format"><span class="octicon octicon-link"></span></a>GPS Data Format</h2>
 
-<h3>
-<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
+<p>Leaflet Playback consumes GPS tracks in the form of GeoJSON. The next feature to be implemented for the plugin is the added ability to parse GPX tracks as well. The schema of the GeoJSON data is as follows: </p>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<div class="highlight highlight-javascript"><pre><span class="p">{</span>
+  <span class="s2">"type"</span><span class="o">:</span> <span class="s2">"Feature"</span><span class="p">,</span>
+  <span class="s2">"geometry"</span><span class="o">:</span> <span class="p">{</span>
+    <span class="s2">"type"</span><span class="o">:</span> <span class="s2">"MultiPoint"</span><span class="p">,</span>
+    <span class="s2">"coordinates"</span><span class="o">:</span> <span class="p">[</span><span class="cm">/*array of [lng,lat] coordinates*/</span><span class="p">]</span>
+  <span class="p">},</span>
+  <span class="s2">"properties"</span><span class="o">:</span> <span class="p">{</span>
+    <span class="s2">"time"</span><span class="o">:</span> <span class="p">[</span><span class="cm">/*array of UNIX timestamps*/</span><span class="p">]</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>Other attributes may be added to the GeoJSON object, but this is the required minimum schema for the plug-in to work.</p>
+
+<p>GeoJSON tracks can be added dynamically to Leaflet Playback by calling:</p>
+
+<div class="highlight highlight-javascript"><pre><span class="nx">playback</span><span class="p">.</span><span class="nx">addTracks</span><span class="p">(</span><span class="nx">tracks</span><span class="p">);</span>
+</pre></div>
+
+<h2>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<div class="highlight highlight-javascript"><pre><span class="kd">var</span> <span class="nx">playback</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">L</span><span class="p">.</span><span class="nx">Playback</span><span class="p">(</span><span class="nx">map</span><span class="p">,</span> <span class="nx">demoTracks</span><span class="p">,</span> <span class="nx">clockCallback</span><span class="p">);</span>
+</pre></div>
+
+<p>Where map is your Leaflet map object, demoTracks is a GeoJSON object or an array of GeoJSON objects, and clockCallback is a function you feed it that will send the timestamp value on each tick.</p>
 
 <h3>
 <a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
-
-<h3>
-<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
-
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+<p>This is a fork of <a href="https://github.com/hallahan" class="user-mention">@hallahan</a> LeafletPlayback plugin.</p>
       </section>
-      <footer>
-        <p>This project is maintained by <a href="https://github.com/recallfx">recallfx</a></p>
-        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
-      </footer>
+
     </div>
-    <script src="javascripts/scale.fix.js"></script>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
     
   </body>
 </html>
