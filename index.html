@@ -43,11 +43,14 @@
 
 <p>Leaflet Playback provides the ability to replay GPS Tracks in the form of GeoJSON objects. Rather than simply animating a marker along a polyline, the speed of the animation is synchroized to a clock. The playback functionality is similar to a video player--you can start and stop playback, change the playback speed, load GPS tracks, as well as set the playback time with a slider or calendar/time-picker widget.</p>
 
-<h2>
-<a name="view-demo" class="anchor" href="#view-demo"><span class="octicon octicon-link"></span></a><a href="http://leafletplayback.theoutpost.io">View Demo</a>
-</h2>
+<h2>Examples</h2>
 
-<p>This demo pre-loads some GPS GeoJSON tracks and lets you play them back.</p>
+<h3><a href="./examples/example_0.html">Example 0</a></h3>
+<p>Basic example of LeafletPlayback plugin, that pre-loads some GPS GeoJSON tracks and lets you play them back.</p>
+
+<h3><a href="./examples/example_1.html">Example 1</a></h3>
+<p>Use vis.js timeline as slider control</p>
+
 
 <h2>
 <a name="gps-data-format" class="anchor" href="#gps-data-format"><span class="octicon octicon-link"></span></a>GPS Data Format</h2>
@@ -79,12 +82,12 @@
 <div class="highlight highlight-javascript"><pre><span class="kd">var</span> <span class="nx">playback</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">L</span><span class="p">.</span><span class="nx">Playback</span><span class="p">(</span><span class="nx">map</span><span class="p">,</span> <span class="nx">demoTracks</span><span class="p">,</span> <span class="nx">clockCallback</span><span class="p">);</span>
 </pre></div>
 
-<p>Where map is your Leaflet map object, demoTracks is a GeoJSON object or an array of GeoJSON objects, and clockCallback is a function you feed it that will send the timestamp value on each tick.</p>
+<p>Where map is your Leaflet map object, <code>demoTracks</code> is a GeoJSON object or an array of GeoJSON objects, and <code>clockCallback(timestamp)</code> is a function you feed it that will send the <code>timestamp</code> value on each tick.</p>
 
 <h3>
 <a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
 
-<p>This is a fork of <a href="https://github.com/hallahan" class="user-mention">@hallahan</a> LeafletPlayback plugin.</p>
+<p>This is a <a href="https://github.com/recallfx" class="user-mention">@recallfx</a> fork of <a href="https://github.com/hallahan" class="user-mention">@hallahan</a> LeafletPlayback plugin.</p>
       </section>
 
     </div>
