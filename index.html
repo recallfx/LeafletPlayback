@@ -39,18 +39,35 @@
         </div>
 
         <h1>
-<a name="leaflet-playback" class="anchor" href="#leaflet-playback"><span class="octicon octicon-link"></span></a>Leaflet Playback</h1>
+<a name="frok-info" class="anchor" href="#frok-info"><span class="octicon octicon-link"></span></a>Frok info</h1>
+
+<p>This version of LeafletPlayback focuses on component reusability, so it is stripped from all dependencies except jQuery and LeafLet.</p>
+
+<p>There are three leaflet controls defined in <code>src/Controls.js</code>: </p>
+
+<ol>
+<li>L.Playback.DateControl - Current tick date/time;</li>
+<li>L.Playback.PlayControl -  Play/stop button to control time flow of LeafletPlayback;</li>
+<li>L.Playback.SliderControl - Simple time slider;</li>
+</ol><h1>
+<a name="leaflet-playback-recallfx" class="anchor" href="#leaflet-playback-recallfx"><span class="octicon octicon-link"></span></a>Leaflet Playback (recallfx)</h1>
 
 <p>Leaflet Playback provides the ability to replay GPS Tracks in the form of GeoJSON objects. Rather than simply animating a marker along a polyline, the speed of the animation is synchroized to a clock. The playback functionality is similar to a video player--you can start and stop playback, change the playback speed, load GPS tracks, as well as set the playback time with a slider or calendar/time-picker widget.</p>
 
-<h2>Examples</h2>
+<h2>
+<a name="examples" class="anchor" href="#examples"><span class="octicon octicon-link"></span></a>Examples</h2>
 
-<h3><a href="./examples/example_0.html">Example 0</a></h3>
+<h3>
+<a name="example-0" class="anchor" href="#example-0"><span class="octicon octicon-link"></span></a><a href="http://recallfx.github.io/LeafletPlayback/examples/example_0.html">Example 0</a>
+</h3>
+
 <p>Basic example of LeafletPlayback plugin, that pre-loads some GPS GeoJSON tracks and lets you play them back.</p>
 
-<h3><a href="./examples/example_1.html">Example 1</a></h3>
-<p>Use vis.js timeline as slider control</p>
+<h3>
+<a name="example-1" class="anchor" href="#example-1"><span class="octicon octicon-link"></span></a><a href="http://recallfx.github.io/LeafletPlayback/examples/example_1.html">Example 1</a>
+</h3>
 
+<p>Use vis.js timeline as slider control</p>
 
 <h2>
 <a name="gps-data-format" class="anchor" href="#gps-data-format"><span class="octicon octicon-link"></span></a>GPS Data Format</h2>
@@ -71,21 +88,59 @@
 
 <p>Other attributes may be added to the GeoJSON object, but this is the required minimum schema for the plug-in to work.</p>
 
-<p>GeoJSON tracks can be added dynamically to Leaflet Playback by calling:</p>
-
-<div class="highlight highlight-javascript"><pre><span class="nx">playback</span><span class="p">.</span><span class="nx">addTracks</span><span class="p">(</span><span class="nx">tracks</span><span class="p">);</span>
-</pre></div>
+<h1>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h1>
 
 <h2>
-<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h2>
-
-<div class="highlight highlight-javascript"><pre><span class="kd">var</span> <span class="nx">playback</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">L</span><span class="p">.</span><span class="nx">Playback</span><span class="p">(</span><span class="nx">map</span><span class="p">,</span> <span class="nx">demoTracks</span><span class="p">,</span> <span class="nx">clockCallback</span><span class="p">);</span>
-</pre></div>
-
-<p>Where map is your Leaflet map object, <code>demoTracks</code> is a GeoJSON object or an array of GeoJSON objects, and <code>clockCallback(timestamp)</code> is a function you feed it that will send the <code>timestamp</code> value on each tick.</p>
+<a name="api" class="anchor" href="#api"><span class="octicon octicon-link"></span></a>API</h2>
 
 <h3>
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
+<a name="new-lplaybackmap-geojson-onplaybacktimechange-options" class="anchor" href="#new-lplaybackmap-geojson-onplaybacktimechange-options"><span class="octicon octicon-link"></span></a>new L.Playback(map, geoJSON, onPlaybackTimeChange, options)</h3>
+
+<h3>
+<a name="options" class="anchor" href="#options"><span class="octicon octicon-link"></span></a>Options</h3>
+
+<div class="highlight highlight-javascript"><pre><span class="kd">var</span> <span class="nx">playback</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">L</span><span class="p">.</span><span class="nx">Playback</span><span class="p">(</span><span class="nx">map</span><span class="p">,</span> <span class="nx">geoJSON</span><span class="p">,</span> <span class="nx">onPlaybackTimeChange</span><span class="p">,</span> <span class="nx">options</span><span class="p">);</span>
+</pre></div>
+
+<ul>
+<li><p><code>map</code> - LeafLet map object. <strong>Required</strong>.</p></li>
+<li><p><code>geoJSON</code> - GeoJSON object or an array of GeoJSON objects. Pass <code>null</code> if you don't have any data yet. <strong>Required</strong>.</p></li>
+<li><p><code>onPlaybackTimeChange</code> - A function with signature <code>(timestamp)</code> that will send the <code>timestamp</code> value on each tick. <strong>Required</strong>.</p></li>
+<li><p><code>options</code> - An options object. <strong>Optional</strong>.</p></li>
+</ul><h3>
+<a name="options-1" class="anchor" href="#options-1"><span class="octicon octicon-link"></span></a>options</h3>
+
+<ul>
+<li><p><code>tracksLayer</code> - Set <code>true</code> if you want to show layer control on the map. <strong>Default: <code>true</code></strong>.</p></li>
+<li><p><code>playControl</code> - Set <code>true</code> if play button is needed. <strong>Default: <code>false</code></strong>.</p></li>
+<li><p><code>dateControl</code> - Set <code>true</code> if date label is needed. <strong>Default: <code>false</code></strong>.</p></li>
+<li><p><code>sliderControl</code> - Set <code>true</code> if slider control is needed. <strong>Default: <code>false</code></strong>.</p></li>
+<li><p><code>marker</code> - Set leaflet marker options, to extend <code>L.Playback.MoveableMarker</code>. Useful for custom icons. <strong>Default: <code>{}</code></strong>.</p></li>
+<li><p><code>maxInterpolationTime</code> - Set max interpolation time in seconds. <strong>Default: <code>5*60*1000</code> (5 minutes)</strong>.</p></li>
+</ul><h3>
+<a name="playbacksetdatageojson" class="anchor" href="#playbacksetdatageojson"><span class="octicon octicon-link"></span></a>playback#setData(geoJSON)</h3>
+
+<p>Reset current data and add new.</p>
+
+<ul>
+<li>
+<code>geoJSON</code> - GeoJSON object or an array of GeoJSON objects. <strong>Required</strong>.</li>
+</ul><h3>
+<a name="playbackadddatageojson" class="anchor" href="#playbackadddatageojson"><span class="octicon octicon-link"></span></a>playback#addData(geoJSON)</h3>
+
+<p>Add new data.</p>
+
+<ul>
+<li>
+<code>geoJSON</code> - GeoJSON object or an array of GeoJSON objects. <strong>Required</strong>.</li>
+</ul><h3>
+<a name="playbackcleardata" class="anchor" href="#playbackcleardata"><span class="octicon octicon-link"></span></a>playback#clearData()</h3>
+
+<p>Clear all data and tracks layer.</p>
+
+<h2>
+<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h2>
 
 <p>This is a <a href="https://github.com/recallfx" class="user-mention">@recallfx</a> fork of <a href="https://github.com/hallahan" class="user-mention">@hallahan</a> LeafletPlayback plugin.</p>
       </section>
