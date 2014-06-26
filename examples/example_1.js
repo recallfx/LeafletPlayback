@@ -55,13 +55,17 @@ $(function() {
     };
         
     // Initialize playback
-    var playback = new L.Playback(map, demoTracks, onPlaybackTimeChange, playbackOptions);
+    var playback = new L.Playback(map, null, onPlaybackTimeChange, playbackOptions);
+    
+    playback.setData(demoTracks);    
+    playback.addData(blueMountain);
 
+    // Uncomment to test data reset;
+    //playback.setData(blueMountain);    
+    
     // Set timeline time change event, so cursor is set after moving custom time (blue)
     timeline.on('timechange', onCustomTimeChange);    
 
-
-    
     // A callback so timeline is set after changing playback time
     function onPlaybackTimeChange (ms) {
         timeline.setCustomTime(new Date(ms));
