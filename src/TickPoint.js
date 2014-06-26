@@ -6,7 +6,7 @@ L.Playback.TickPoint = L.Class.extend({
             options = options || {};
             var tickLen = options.tickLen || 250;
             
-            this._geoJSON = geoJSON;
+            this._geoJSON = geoJSON; // TODO: this is redundant
             this._tickLen = tickLen;
             this._ticks = [];
 

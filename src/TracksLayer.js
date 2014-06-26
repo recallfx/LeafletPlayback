@@ -5,8 +5,8 @@
 L.Playback = L.Playback || {};
 
 L.Playback.TracksLayer = L.Class.extend({
-    initialize : function (map, tracks) {
-        this.layer = new L.GeoJSON(tracks, {
+    initialize : function (map) {
+        this.layer = new L.GeoJSON(null, {
                 pointToLayer : function (geojson, latlng) {
                     var circle = new L.CircleMarker(latlng, {
                             radius : 5
@@ -23,6 +23,18 @@ L.Playback.TracksLayer = L.Class.extend({
         L.control.layers(null, overlayControl, {
             collapsed : false
         }).addTo(map);
+    },
+
+    // clear all geoJSON layers
+    clearLayer : function(){
+        for (var i in this.layer._layers){
+            this.layer.removeLayer(this.layer._layers[i]);            
+        }
+    },
+
+    // add new geoJSON layer
+    addLayer : function(geoJSON){
+        this.layer.addData(geoJSON);
     }
 
 });

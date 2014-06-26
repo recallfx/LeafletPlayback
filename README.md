@@ -31,19 +31,55 @@ Leaflet Playback consumes GPS tracks in the form of GeoJSON. The next feature to
 
 Other attributes may be added to the GeoJSON object, but this is the required minimum schema for the plug-in to work.
 
-GeoJSON tracks can be added dynamically to Leaflet Playback by calling:
+# Usage
+
+## API
+
+### new L.Playback(map, geoJSON, clockCallback)
 
 ```javascript
-playback.addTracks(tracks);
+var playback = new L.Playback(map, geoJSON, clockCallback, options);
 ```
 
-## Usage
+* `map` - LeafLet map object. **Required**.
 
-```javascript
-var playback = new L.Playback(map, demoTracks, clockCallback);
-```
+* `geoJSON` - GeoJSON object or an array of GeoJSON objects. Pass `null` if you don't have any data yet. **Required**.
 
-Where `map` is your Leaflet map object, `demoTracks` is a GeoJSON object or an array of GeoJSON objects, and `clockCallback(timestamp)` is a function you feed it that will send the `timestamp` value on each tick.
+* `onPlaybackTimeChange` - A function with signature `(timestamp)` that will send the `timestamp` value on each tick. **Required**.
+
+* `options` - An options object. **Optional**.
+
+### options
+
+* `tracksLayer` - Set `true` if you want to show layer control on the map. **Default: `true`**.
+
+* `playControl` - Set `true` if play button is needed. **Default: `false`**.
+
+* `dateControl` - Set `true` if date label is needed. **Default: `false`**.
+
+* `sliderControl` - Set `true` if slider control is needed. **Default: `false`**.
+
+* `marker` - Set leaflet marker options, to extend `L.Playback.MoveableMarker`. Useful for custom icons. **Default: `{}`**.
+
+* `maxInterpolationTime` - Set max interpolation time in seconds. **Default: `5*60*1000` (5 minutes)**.
+
+
+### playback#setData(geoJSON)
+
+Reset current data and add new.
+
+* `geoJSON` - GeoJSON object or an array of GeoJSON objects. **Required**.
+
+### playback#addData(geoJSON)
+
+Add new data.
+
+* `geoJSON` - GeoJSON object or an array of GeoJSON objects. **Required**.
+
+### playback#clearData()
+
+Clear all data and tracks layer.
+
 
 ### Authors and Contributors
 This is a @recallfx fork of @hallahan LeafletPlayback plugin.

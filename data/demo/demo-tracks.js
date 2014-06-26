@@ -35453,4 +35453,4 @@ var houseToCoordley = {
 }
 
 
-var demoTracks = [blodgett, blueMountain, drive, houseToCoordley, tillicum];
+var demoTracks = [blodgett, drive, houseToCoordley, tillicum];

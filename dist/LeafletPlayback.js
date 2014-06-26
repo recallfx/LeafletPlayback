@@ -103,7 +103,7 @@ L.Playback.TickPoint = L.Class.extend({
             options = options || {};
             var tickLen = options.tickLen || 250;
             
-            this._geoJSON = geoJSON;
+            this._geoJSON = geoJSON; // TODO: this is redundant
             this._tickLen = tickLen;
             this._ticks = [];
 
@@ -250,25 +250,68 @@ L.Playback = L.Playback || {};
 L.Playback.Tick = L.Class.extend({
 
         initialize : function (map, tickPoints, options) {
+            L.setOptions(this, options);
+        
             this._map = map;
-            if (tickPoints instanceof Array) {
-                this._tickPoints = tickPoints;
-            } else {
-                this._tickPoints = [tickPoints];
-            }
             this._markers = [];
-            for (var i = 0, len = this._tickPoints.length; i < len; i++) {
-                var firstLngLat = this._tickPoints[i].getFirstTick();
-                var latLng = new L.LatLng(firstLngLat[1], firstLngLat[0]);
-                this._markers[i] = new L.Playback.MoveableMarker(latLng, options.marker).addTo(map);
+            this._tickPoints = [];
+
+            // initialize tick points
+            this.setTickPoints(tickPoints);
+        },
+        
+        clearTickPoints: function(){
+            while (this._markers.length > 0){
+                var marker = this._markers.pop();
+                this._map.removeLayer(marker);
             }
+            
+            while (this._tickPoints.length > 0){
+                this._tickPoints.pop();
+            }
+
         },
 
+        setTickPoints : function (tickPoints){
+            // reset current markers
+            this.clearTickPoints();
+
+            // return if nothing is set
+            if (!tickPoints){
+                return;
+            }
+            
+            if (tickPoints instanceof Array) {            
+                for (var i = 0, len = tickPoints.length; i < len; i++) {
+                    this.addTickPoint(tickPoints[i]);
+                }
+            } else {
+                this.addTickPoint(tickPoints);
+            }            
+        },
+        
         addTickPoint : function (tickPoint, ms) {
-            this._tickPoints.push(tickPoint);
-            var lngLat = tickPoint.tick(ms);
-            var latLng = new L.LatLng(lngLat[1], lngLat[0]);
-            this._markers.push(new L.Playback.MoveableMarker(latLng, options.marker).addTo(this._map));
+            // return if nothing is set
+            if (!tickPoint){
+                return;
+            }
+                        
+            var lngLat = null;
+            
+            // if ms is set, then try to get tick at specific time
+            if (ms){
+                lngLat = tickPoint.tick(ms);
+            }
+            else {
+                lngLat = tickPoint.getFirstTick();
+            }
+            
+            if (lngLat){
+                var latLng = new L.LatLng(lngLat[1], lngLat[0]);
+               
+                this._tickPoints.push(tickPoint);
+                this._markers.push(new L.Playback.MoveableMarker(latLng, this.options.marker).addTo(this._map));
+            }
         },
 
         tock : function (ms, transitionTime) {
@@ -281,22 +324,32 @@ L.Playback.Tick = L.Class.extend({
         },
 
         getStartTime : function () {
-            var earliestTime = this._tickPoints[0].getStartTime();
-            for (var i = 1, len = this._tickPoints.length; i < len; i++) {
-                var t = this._tickPoints[i].getStartTime();
-                if (t < earliestTime)
-                    earliestTime = t;
+            var earliestTime = 0;
+
+            if (this._tickPoints.length > 0){
+                earliestTime = this._tickPoints[0].getStartTime();
+                for (var i = 1, len = this._tickPoints.length; i < len; i++) {
+                    var t = this._tickPoints[i].getStartTime();
+                    if (t < earliestTime)
+                        earliestTime = t;
+                }
             }
+            
             return earliestTime;
         },
 
         getEndTime : function () {
-            var latestTime = this._tickPoints[0].getEndTime();
-            for (var i = 1, len = this._tickPoints.length; i < len; i++) {
-                var t = this._tickPoints[i].getEndTime();
-                if (t > latestTime)
-                    latestTime = t;
+            var latestTime = 0;
+        
+            if (this._tickPoints.length > 0){
+                latestTime = this._tickPoints[0].getEndTime();
+                for (var i = 1, len = this._tickPoints.length; i < len; i++) {
+                    var t = this._tickPoints[i].getEndTime();
+                    if (t > latestTime)
+                        latestTime = t;
+                }
             }
+        
             return latestTime;
         },
 
@@ -414,8 +467,8 @@ L.Playback.Clock = L.Class.extend({
 L.Playback = L.Playback || {};
 
 L.Playback.TracksLayer = L.Class.extend({
-    initialize : function (map, tracks) {
-        this.layer = new L.GeoJSON(tracks, {
+    initialize : function (map) {
+        this.layer = new L.GeoJSON(null, {
                 pointToLayer : function (geojson, latlng) {
                     var circle = new L.CircleMarker(latlng, {
                             radius : 5
@@ -432,6 +485,18 @@ L.Playback.TracksLayer = L.Class.extend({
         L.control.layers(null, overlayControl, {
             collapsed : false
         }).addTo(map);
+    },
+
+    // clear all geoJSON layers
+    clearLayer : function(){
+        for (var i in this.layer._layers){
+            this.layer.removeLayer(this.layer._layers[i]);            
+        }
+    },
+
+    // add new geoJSON layer
+    addLayer : function(geoJSON){
+        this.layer.addData(geoJSON);
     }
 
 });
@@ -520,58 +585,58 @@ L.Playback.PlayControl = L.Control.extend({
 });    
     
 L.Playback.SliderControl = L.Control.extend({
-        options : {
-            position : 'bottomleft'
-        },
+    options : {
+        position : 'bottomleft'
+    },
 
-        initialize : function (playback) {
-            this.playback = playback;
-        },
+    initialize : function (playback) {
+        this.playback = playback;
+    },
 
-        onAdd : function (map) {
-            this._container = L.DomUtil.create('div', 'leaflet-control-layers leaflet-control-layers-expanded');
+    onAdd : function (map) {
+        this._container = L.DomUtil.create('div', 'leaflet-control-layers leaflet-control-layers-expanded');
 
-            var self = this;
-            var playback = this.playback;
+        var self = this;
+        var playback = this.playback;
 
-            // slider
-            this._slider = L.DomUtil.create('input', 'slider', this._container);
-            this._slider.type = 'range';
-            this._slider.min = playback.getStartTime();
-            this._slider.max = playback.getEndTime();
-            this._slider.value = playback.getTime();
+        // slider
+        this._slider = L.DomUtil.create('input', 'slider', this._container);
+        this._slider.type = 'range';
+        this._slider.min = playback.getStartTime();
+        this._slider.max = playback.getEndTime();
+        this._slider.value = playback.getTime();
 
-            var stop = L.DomEvent.stopPropagation;
+        var stop = L.DomEvent.stopPropagation;
 
-            L.DomEvent
-            .on(this._slider, 'click', stop)
-            .on(this._slider, 'mousedown', stop)
-            .on(this._slider, 'dblclick', stop)
-            .on(this._slider, 'click', L.DomEvent.preventDefault)
-            //.on(this._slider, 'mousemove', L.DomEvent.preventDefault)
-            .on(this._slider, 'change', onSliderChange, this)
-            .on(this._slider, 'mousemove', onSliderChange, this);           
-  
+        L.DomEvent
+        .on(this._slider, 'click', stop)
+        .on(this._slider, 'mousedown', stop)
+        .on(this._slider, 'dblclick', stop)
+        .on(this._slider, 'click', L.DomEvent.preventDefault)
+        //.on(this._slider, 'mousemove', L.DomEvent.preventDefault)
+        .on(this._slider, 'change', onSliderChange, this)
+        .on(this._slider, 'mousemove', onSliderChange, this);           
 
-            function onSliderChange(e) {
-                var val = Number(e.target.value);
-                playback.setCursor(val);
-            }
 
-            playback.addCallback(function (ms) {
-                self._slider.value = ms;
-            });
-            
-            
-            map.on('playback:add_tracks', function(){
-                self._slider.min = playback.getStartTime();
-                self._slider.max = playback.getEndTime();
-                self._slider.value = playback.getTime();
-            });
-
-            return this._container;
+        function onSliderChange(e) {
+            var val = Number(e.target.value);
+            playback.setCursor(val);
         }
-    });      
+
+        playback.addCallback(function (ms) {
+            self._slider.value = ms;
+        });
+        
+        
+        map.on('playback:add_tracks', function(){
+            self._slider.min = playback.getStartTime();
+            self._slider.max = playback.getEndTime();
+            self._slider.value = playback.getTime();
+        });
+
+        return this._container;
+    }
+});      
 
 L.Playback = L.Playback.Clock.extend({
         statics : {
@@ -600,21 +665,17 @@ L.Playback = L.Playback.Clock.extend({
 
         initialize : function (map, geoJSON, callback, options) {
             L.setOptions(this, options);
-            this.map = map;
-            this.geoJSON = geoJSON;
-            this.tickPoints = [];
-            if (geoJSON instanceof Array) {
-                for (var i = 0, len = geoJSON.length; i < len; i++) {
-                    this.tickPoints.push(new L.Playback.TickPoint(geoJSON[i], this.options));
-                }
-            } else {
-                this.tickPoints.push(new L.Playback.TickPoint(geoJSON, this.options));
-            }
-            this.tick = new L.Playback.Tick(map, this.tickPoints, this.options);
-            L.Playback.Clock.prototype.initialize.call(this, this.tick, callback, this.options);
+            
+            this._map = map;
+            this._tickController = new L.Playback.Tick(map, null, this.options);
+            L.Playback.Clock.prototype.initialize.call(this, this._tickController, callback, this.options);
+            
             if (this.options.tracksLayer) {
-                this.tracksLayer = new L.Playback.TracksLayer(map, geoJSON);
+                this._tracksLayer = new L.Playback.TracksLayer(map);
             }
+
+            this.setData(geoJSON);            
+            
 
             if (this.options.playControl) {
                 this.playControl = new L.Playback.PlayControl(this);
@@ -632,14 +693,43 @@ L.Playback = L.Playback.Clock.extend({
             }
 
         },
-
-        addTracks : function (geoJSON) {
-            console.log('addTracks');
-            console.log(geoJSON);
-            var newTickPoint = new L.Playback.TickPoint(geoJSON, this.options);
-            this.tick.addTickPoint(newTickPoint, this.getTime());
+        
+        clearData : function(){
+            this._tickController.clearTickPoints();
             
-            this.map.fire('playback:add_tracks');
+            if (this._tracksLayer){
+                this._tracksLayer.clearLayer();
+            }
+        },
+        
+        setData : function (geoJSON) {
+            this.clearData();
+        
+            this.addData(geoJSON, this.getTime());
+            
+            this.setCursor(this.getStartTime());
+        },
+
+        // bad implementation
+        addData : function (geoJSON, ms) {
+            // return if data not set
+            if (!geoJSON){
+                return;
+            }
+        
+            if (geoJSON instanceof Array) {
+                for (var i = 0, len = geoJSON.length; i < len; i++) {
+                    this._tickController.addTickPoint(new L.Playback.TickPoint(geoJSON[i], this.options), ms);
+                }
+            } else {
+                this._tickController.addTickPoint(new L.Playback.TickPoint(geoJSON, this.options), ms);
+            }
+
+            this._map.fire('playback:set:data');
+            
+            if (this.options.tracksLayer) {
+                this._tracksLayer.addLayer(geoJSON);
+            }                  
         }
     });
 
@@ -651,4 +741,4 @@ L.Map.addInitHook(function () {
 
 L.playback = function (map, geoJSON, callback, options) {
     return new L.Playback(map, geoJSON, callback, options);
-}
+};
