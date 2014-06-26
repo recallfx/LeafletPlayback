@@ -67,45 +67,54 @@ L.Playback.Util = L.Class.extend({
 
 L.Playback = L.Playback || {};
 
-L.Playback.MoveableMarker = L.Marker.extend({
-    
-  initialize: function (startLatLng, options) {
-    options = options || {};
-    L.Marker.prototype.initialize.call(this, startLatLng, options);
+L.Playback.MoveableMarker = L.Marker.extend({    
+    initialize: function (startLatLng, options, feature) {
+        options = options || {};
 
-    //this.bindPopup('');
-  },
+        L.Marker.prototype.initialize.call(this, startLatLng, options);
+        
+        this.popupContent = '';
 
-  move: function (latLng, transitionTime) {
-    // Only if CSS3 transitions are supported
-    if (L.DomUtil.TRANSITION) {
-      if (this._icon) { 
-        this._icon.style[L.DomUtil.TRANSITION] = 'all ' + transitionTime + 'ms linear'; 
-        if (this._popup && this._popup._wrapper)
-          this._popup._wrapper.style[L.DomUtil.TRANSITION] = 'all ' + transitionTime + 'ms linear'; 
-      }
-      if (this._shadow) { 
-        this._shadow.style[L.DomUtil.TRANSITION] = 'all ' + transitionTime + 'ms linear'; 
-      }
+        if (options.getPopup){
+            this.popupContent = options.getPopup(feature);
+            
+            if (this.popupContent != ''){
+                this.bindPopup('<b>' + this.popupContent + '</b>');
+            }            
+        }
+    },
+
+    move: function (latLng, transitionTime) {
+        // Only if CSS3 transitions are supported
+        if (L.DomUtil.TRANSITION) {
+            if (this._icon) { 
+                this._icon.style[L.DomUtil.TRANSITION] = 'all ' + transitionTime + 'ms linear'; 
+                if (this._popup && this._popup._wrapper)
+                    this._popup._wrapper.style[L.DomUtil.TRANSITION] = 'all ' + transitionTime + 'ms linear'; 
+            }
+            if (this._shadow) { 
+                this._shadow.style[L.DomUtil.TRANSITION] = 'all ' + transitionTime + 'ms linear'; 
+            }
+        }
+        this.setLatLng(latLng);
+        if (this._popup){
+            this._popup.setContent('<b>' + this.popupContent + '</b><br/>' + this._latlng.toString());
+        }    
     }
-    this.setLatLng(latLng);
-    if (this._popup){
-        this._popup.setContent(this._latlng.toString());
-    }    
-  }
 });
 
 L.Playback = L.Playback || {};
 
-L.Playback.TickPoint = L.Class.extend({
+L.Playback.Track = L.Class.extend({
 
         initialize : function (geoJSON, options) {
             options = options || {};
             var tickLen = options.tickLen || 250;
             
-            this._geoJSON = geoJSON; // TODO: this is redundant
+            this._geoJSON = geoJSON;
             this._tickLen = tickLen;
             this._ticks = [];
+            this._marker = null;
 
             var sampleTimes = geoJSON.properties.time;
             var samples = geoJSON.geometry.coordinates;
@@ -215,7 +224,6 @@ L.Playback.TickPoint = L.Class.extend({
         getTickMultiPoint : function () {
             var t = this.getStartTime();
             var endT = this.getEndTime();
-            var tickLen = this._tickLen;
             var coordinates = [];
             var time = [];
             while (t <= endT) {
@@ -235,141 +243,163 @@ L.Playback.TickPoint = L.Class.extend({
                 }
             };
         },
-
-        tick : function (ms) {
-            if (ms > this._endTime)
-                ms = this._endTime;
-            if (ms < this._startTime)
-                ms = this._startTime;
-            return this._ticks[ms];
+        
+        tick : function (timestamp) {
+            if (timestamp > this._endTime)
+                timestamp = this._endTime;
+            if (timestamp < this._startTime)
+                timestamp = this._startTime;
+            return this._ticks[timestamp];
+        },
+        
+        setMarker : function(timestamp, markerOptions){
+            var lngLat = null;
+            
+            // if time stamp is not set, then get first tick
+            if (timestamp){
+                lngLat = this.tick(timestamp);
+            }
+            else {
+                lngLat = this.getFirstTick();
+            }        
+        
+            if (lngLat){
+                var latLng = new L.LatLng(lngLat[1], lngLat[0]);
+                this._marker = new L.Playback.MoveableMarker(latLng, markerOptions, this._geoJSON);                
+            }
+            
+            return this._marker;
+        },
+        
+        moveMarker : function(latLng, transitionTime){
+            if (this._marker){
+                this._marker.move(latLng, transitionTime);
+            }
+        },
+        
+        getMarker : function(){
+            return this._marker;
         }
 
     });
 L.Playback = L.Playback || {};
 
-L.Playback.Tick = L.Class.extend({
+L.Playback.TrackController = L.Class.extend({
 
-        initialize : function (map, tickPoints, options) {
-            L.setOptions(this, options);
-        
-            this._map = map;
-            this._markers = [];
-            this._tickPoints = [];
+    initialize : function (map, tracks, options) {
+        L.setOptions(this, options);
+    
+        this._map = map;
 
-            // initialize tick points
-            this.setTickPoints(tickPoints);
-        },
-        
-        clearTickPoints: function(){
-            while (this._markers.length > 0){
-                var marker = this._markers.pop();
+        this._tracks = [];
+
+        // initialize tick points
+        this.setTracks(tracks);
+    },
+    
+    clearTracks: function(){
+        while (this._tracks.length > 0){
+            var track = this._tracks.pop();
+            var marker = track.getMarker();
+            
+            if (marker){
                 this._map.removeLayer(marker);
             }
-            
-            while (this._tickPoints.length > 0){
-                this._tickPoints.pop();
-            }
+        }            
+    },
 
-        },
-
-        setTickPoints : function (tickPoints){
-            // reset current markers
-            this.clearTickPoints();
-
-            // return if nothing is set
-            if (!tickPoints){
-                return;
-            }
-            
-            if (tickPoints instanceof Array) {            
-                for (var i = 0, len = tickPoints.length; i < len; i++) {
-                    this.addTickPoint(tickPoints[i]);
-                }
-            } else {
-                this.addTickPoint(tickPoints);
-            }            
-        },
+    setTracks : function (tracks){
+        // reset current tracks
+        this.clearTracks();
         
-        addTickPoint : function (tickPoint, ms) {
-            // return if nothing is set
-            if (!tickPoint){
-                return;
-            }
-                        
-            var lngLat = null;
-            
-            // if ms is set, then try to get tick at specific time
-            if (ms){
-                lngLat = tickPoint.tick(ms);
-            }
-            else {
-                lngLat = tickPoint.getFirstTick();
-            }
-            
-            if (lngLat){
-                var latLng = new L.LatLng(lngLat[1], lngLat[0]);
-               
-                this._tickPoints.push(tickPoint);
-                this._markers.push(new L.Playback.MoveableMarker(latLng, this.options.marker).addTo(this._map));
-            }
-        },
-
-        tock : function (ms, transitionTime) {
-            for (var i = 0, len = this._tickPoints.length; i < len; i++) {
-                var lngLat = this._tickPoints[i].tick(ms);
-                var latLng = new L.LatLng(lngLat[1], lngLat[0]);
-                this._markers[i].move(latLng, transitionTime);
-                //this._markers[i].setLatLng(latLng);
-            }
-        },
-
-        getStartTime : function () {
-            var earliestTime = 0;
-
-            if (this._tickPoints.length > 0){
-                earliestTime = this._tickPoints[0].getStartTime();
-                for (var i = 1, len = this._tickPoints.length; i < len; i++) {
-                    var t = this._tickPoints[i].getStartTime();
-                    if (t < earliestTime)
-                        earliestTime = t;
-                }
-            }
-            
-            return earliestTime;
-        },
-
-        getEndTime : function () {
-            var latestTime = 0;
+        this.addTracks(tracks);
+    },
+    
+    addTracks : function (tracks) {
+        // return if nothing is set
+        if (!tracks){
+            return;
+        }
         
-            if (this._tickPoints.length > 0){
-                latestTime = this._tickPoints[0].getEndTime();
-                for (var i = 1, len = this._tickPoints.length; i < len; i++) {
-                    var t = this._tickPoints[i].getEndTime();
-                    if (t > latestTime)
-                        latestTime = t;
-                }
+        if (tracks instanceof Array) {            
+            for (var i = 0, len = tracks.length; i < len; i++) {
+                this.addTrack(tracks[i]);
             }
-        
-            return latestTime;
-        },
-
-        getMarkers : function () {
-            return this._markers;
+        } else {
+            this.addTrack(tracks);
+        }            
+    },
+    
+    // add single track
+    addTrack : function (track, timestamp) {
+        // return if nothing is set
+        if (!track){
+            return;
         }
 
-    });
+        var marker = track.setMarker(timestamp, this.options.marker);
+
+        if (marker){
+            marker.addTo(this._map);
+            
+            this._tracks.push(track);
+        }            
+    },
+
+    tock : function (timestamp, transitionTime) {
+        for (var i = 0, len = this._tracks.length; i < len; i++) {
+            var lngLat = this._tracks[i].tick(timestamp);
+            var latLng = new L.LatLng(lngLat[1], lngLat[0]);
+            this._tracks[i].moveMarker(latLng, transitionTime);
+        }
+    },
+
+    getStartTime : function () {
+        var earliestTime = 0;
+
+        if (this._tracks.length > 0){
+            earliestTime = this._tracks[0].getStartTime();
+            for (var i = 1, len = this._tracks.length; i < len; i++) {
+                var t = this._tracks[i].getStartTime();
+                if (t < earliestTime)
+                    earliestTime = t;
+            }
+        }
+        
+        return earliestTime;
+    },
+
+    getEndTime : function () {
+        var latestTime = 0;
+    
+        if (this._tracks.length > 0){
+            latestTime = this._tracks[0].getEndTime();
+            for (var i = 1, len = this._tracks.length; i < len; i++) {
+                var t = this._tracks[i].getEndTime();
+                if (t > latestTime)
+                    latestTime = t;
+            }
+        }
+    
+        return latestTime;
+    },
+
+    getTracks : function () {
+        return this._tracks;
+    }
+});
 L.Playback = L.Playback || {};
 
 L.Playback.Clock = L.Class.extend({
 
-  initialize: function (tickObj, callback, options) {
-    this._tickObj = tickObj;
+  initialize: function (trackController, callback, options) {
+    this._trackController = trackController;
     this._callbacksArry = [];
     if (callback) this.addCallback(callback);
     L.setOptions(this, options);
     this._speed = this.options.speed;
     this._tickLen = this.options.tickLen;
-    this._cursor = tickObj.getStartTime();
+    this._cursor = trackController.getStartTime();
     this._transitionTime = this._tickLen / this._speed;
   },
 
@@ -379,11 +409,11 @@ L.Playback.Clock = L.Class.extend({
   },
 
   _tick: function (self) {
-    if (self._cursor > self._tickObj.getEndTime()) {
+    if (self._cursor > self._trackController.getEndTime()) {
       clearInterval(self._intervalID);
       return;
     }
-    self._tickObj.tock(self._cursor, self._transitionTime);
+    self._trackController.tock(self._cursor, self._transitionTime);
     self._callbacks(self._cursor);
     self._cursor += self._tickLen;
   },
@@ -438,7 +468,7 @@ L.Playback.Clock = L.Class.extend({
       time += this._tickLen - mod;
     }
     this._cursor = time;
-    this._tickObj.tock(this._cursor, 0);
+    this._trackController.tock(this._cursor, 0);
     this._callbacks(this._cursor);
   },
 
@@ -447,11 +477,11 @@ L.Playback.Clock = L.Class.extend({
   },
 
   getStartTime: function() {
-    return this._tickObj.getStartTime();
+    return this._trackController.getStartTime();
   },
 
   getEndTime: function() {
-    return this._tickObj.getEndTime();
+    return this._trackController.getEndTime();
   },
 
   getTickLen: function() {
@@ -462,21 +492,25 @@ L.Playback.Clock = L.Class.extend({
 
 // Simply shows all of the track points as circles.
 // TODO: Associate circle color with the marker color.
-//       Show relevent data about point in popup.
 
 L.Playback = L.Playback || {};
 
 L.Playback.TracksLayer = L.Class.extend({
     initialize : function (map) {
         this.layer = new L.GeoJSON(null, {
-                pointToLayer : function (geojson, latlng) {
-                    var circle = new L.CircleMarker(latlng, {
-                            radius : 5
-                        });
-                    // circle.bindPopup(i);
-                    return circle;
+            pointToLayer : function (featureData, latlng) {
+                var circleOptions = {};
+                if (featureData.properties && featureData.properties.path_options){
+                    circleOptions = featureData.properties.path_options;
                 }
-            });
+                
+                if (!circleOptions.radius){
+                    circleOptions.radius = 5;
+                }
+            
+                return new L.CircleMarker(latlng, circleOptions);
+            }
+        });
 
         var overlayControl = {
             'GPS Tracks' : this.layer
@@ -498,7 +532,6 @@ L.Playback.TracksLayer = L.Class.extend({
     addLayer : function(geoJSON){
         this.layer.addData(geoJSON);
     }
-
 });
 L.Playback = L.Playback || {};
 
@@ -641,8 +674,8 @@ L.Playback.SliderControl = L.Control.extend({
 L.Playback = L.Playback.Clock.extend({
         statics : {
             MoveableMarker : L.Playback.MoveableMarker,
-            TickPoint : L.Playback.TickPoint,
-            Tick : L.Playback.Tick,
+            Track : L.Playback.Track,
+            TrackController : L.Playback.TrackController,
             Clock : L.Playback.Clock,
             Util : L.Playback.Util,
             
@@ -667,8 +700,8 @@ L.Playback = L.Playback.Clock.extend({
             L.setOptions(this, options);
             
             this._map = map;
-            this._tickController = new L.Playback.Tick(map, null, this.options);
-            L.Playback.Clock.prototype.initialize.call(this, this._tickController, callback, this.options);
+            this._trackController = new L.Playback.TrackController(map, null, this.options);
+            L.Playback.Clock.prototype.initialize.call(this, this._trackController, callback, this.options);
             
             if (this.options.tracksLayer) {
                 this._tracksLayer = new L.Playback.TracksLayer(map);
@@ -695,7 +728,7 @@ L.Playback = L.Playback.Clock.extend({
         },
         
         clearData : function(){
-            this._tickController.clearTickPoints();
+            this._trackController.clearTracks();
             
             if (this._tracksLayer){
                 this._tracksLayer.clearLayer();
@@ -719,10 +752,10 @@ L.Playback = L.Playback.Clock.extend({
         
             if (geoJSON instanceof Array) {
                 for (var i = 0, len = geoJSON.length; i < len; i++) {
-                    this._tickController.addTickPoint(new L.Playback.TickPoint(geoJSON[i], this.options), ms);
+                    this._trackController.addTrack(new L.Playback.Track(geoJSON[i], this.options), ms);
                 }
             } else {
-                this._tickController.addTickPoint(new L.Playback.TickPoint(geoJSON, this.options), ms);
+                this._trackController.addTrack(new L.Playback.Track(geoJSON, this.options), ms);
             }
 
             this._map.fire('playback:set:data');

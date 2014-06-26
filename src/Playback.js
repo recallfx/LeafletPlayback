@@ -2,8 +2,8 @@
 L.Playback = L.Playback.Clock.extend({
         statics : {
             MoveableMarker : L.Playback.MoveableMarker,
-            TickPoint : L.Playback.TickPoint,
-            Tick : L.Playback.Tick,
+            Track : L.Playback.Track,
+            TrackController : L.Playback.TrackController,
             Clock : L.Playback.Clock,
             Util : L.Playback.Util,
             
@@ -28,8 +28,8 @@ L.Playback = L.Playback.Clock.extend({
             L.setOptions(this, options);
             
             this._map = map;
-            this._tickController = new L.Playback.Tick(map, null, this.options);
-            L.Playback.Clock.prototype.initialize.call(this, this._tickController, callback, this.options);
+            this._trackController = new L.Playback.TrackController(map, null, this.options);
+            L.Playback.Clock.prototype.initialize.call(this, this._trackController, callback, this.options);
             
             if (this.options.tracksLayer) {
                 this._tracksLayer = new L.Playback.TracksLayer(map);
@@ -56,7 +56,7 @@ L.Playback = L.Playback.Clock.extend({
         },
         
         clearData : function(){
-            this._tickController.clearTickPoints();
+            this._trackController.clearTracks();
             
             if (this._tracksLayer){
                 this._tracksLayer.clearLayer();
@@ -80,10 +80,10 @@ L.Playback = L.Playback.Clock.extend({
         
             if (geoJSON instanceof Array) {
                 for (var i = 0, len = geoJSON.length; i < len; i++) {
-                    this._tickController.addTickPoint(new L.Playback.TickPoint(geoJSON[i], this.options), ms);
+                    this._trackController.addTrack(new L.Playback.Track(geoJSON[i], this.options), ms);
                 }
             } else {
-                this._tickController.addTickPoint(new L.Playback.TickPoint(geoJSON, this.options), ms);
+                this._trackController.addTrack(new L.Playback.Track(geoJSON, this.options), ms);
             }
 
             this._map.fire('playback:set:data');

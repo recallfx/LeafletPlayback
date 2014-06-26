@@ -1,14 +1,15 @@
 L.Playback = L.Playback || {};
 
-L.Playback.TickPoint = L.Class.extend({
+L.Playback.Track = L.Class.extend({
 
         initialize : function (geoJSON, options) {
             options = options || {};
             var tickLen = options.tickLen || 250;
             
-            this._geoJSON = geoJSON; // TODO: this is redundant
+            this._geoJSON = geoJSON;
             this._tickLen = tickLen;
             this._ticks = [];
+            this._marker = null;
 
             var sampleTimes = geoJSON.properties.time;
             var samples = geoJSON.geometry.coordinates;
@@ -118,7 +119,6 @@ L.Playback.TickPoint = L.Class.extend({
         getTickMultiPoint : function () {
             var t = this.getStartTime();
             var endT = this.getEndTime();
-            var tickLen = this._tickLen;
             var coordinates = [];
             var time = [];
             while (t <= endT) {
@@ -138,13 +138,42 @@ L.Playback.TickPoint = L.Class.extend({
                 }
             };
         },
-
-        tick : function (ms) {
-            if (ms > this._endTime)
-                ms = this._endTime;
-            if (ms < this._startTime)
-                ms = this._startTime;
-            return this._ticks[ms];
+        
+        tick : function (timestamp) {
+            if (timestamp > this._endTime)
+                timestamp = this._endTime;
+            if (timestamp < this._startTime)
+                timestamp = this._startTime;
+            return this._ticks[timestamp];
+        },
+        
+        setMarker : function(timestamp, markerOptions){
+            var lngLat = null;
+            
+            // if time stamp is not set, then get first tick
+            if (timestamp){
+                lngLat = this.tick(timestamp);
+            }
+            else {
+                lngLat = this.getFirstTick();
+            }        
+        
+            if (lngLat){
+                var latLng = new L.LatLng(lngLat[1], lngLat[0]);
+                this._marker = new L.Playback.MoveableMarker(latLng, markerOptions, this._geoJSON);                
+            }
+            
+            return this._marker;
+        },
+        
+        moveMarker : function(latLng, transitionTime){
+            if (this._marker){
+                this._marker.move(latLng, transitionTime);
+            }
+        },
+        
+        getMarker : function(){
+            return this._marker;
         }
 
     });

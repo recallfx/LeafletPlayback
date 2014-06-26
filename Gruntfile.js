@@ -7,8 +7,8 @@ module.exports = function(grunt) {
         src: [
           'src/Util.js', 
           'src/MoveableMarker.js',
-          'src/TickPoint.js',
-          'src/Tick.js',
+          'src/Track.js',
+          'src/TrackController.js',
           'src/Clock.js',
           'src/TracksLayer.js',
           'src/Control.js',

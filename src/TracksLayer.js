@@ -1,20 +1,24 @@
 // Simply shows all of the track points as circles.
 // TODO: Associate circle color with the marker color.
-//       Show relevent data about point in popup.
 
 L.Playback = L.Playback || {};
 
 L.Playback.TracksLayer = L.Class.extend({
     initialize : function (map) {
         this.layer = new L.GeoJSON(null, {
-                pointToLayer : function (geojson, latlng) {
-                    var circle = new L.CircleMarker(latlng, {
-                            radius : 5
-                        });
-                    // circle.bindPopup(i);
-                    return circle;
+            pointToLayer : function (featureData, latlng) {
+                var circleOptions = {};
+                if (featureData.properties && featureData.properties.path_options){
+                    circleOptions = featureData.properties.path_options;
                 }
-            });
+                
+                if (!circleOptions.radius){
+                    circleOptions.radius = 5;
+                }
+            
+                return new L.CircleMarker(latlng, circleOptions);
+            }
+        });
 
         var overlayControl = {
             'GPS Tracks' : this.layer
@@ -36,5 +40,4 @@ L.Playback.TracksLayer = L.Class.extend({
     addLayer : function(geoJSON){
         this.layer.addData(geoJSON);
     }
-
 });
