@@ -41,7 +41,7 @@
         <h1>
 <a name="frok-info" class="anchor" href="#frok-info"><span class="octicon octicon-link"></span></a>Frok info</h1>
 
-<p>This version of LeafletPlayback focuses on component reusability, so it is stripped from all dependencies except jQuery and LeafLet.</p>
+<p>This is a rewrite of LeafletPlayback, that focuses on component reusability, so it is stripped from all dependencies except jQuery and LeafLet.</p>
 
 <p>There are three leaflet controls defined in <code>src/Controls.js</code>: </p>
 
@@ -68,6 +68,12 @@
 </h3>
 
 <p>Use vis.js timeline as slider control</p>
+
+<h3>
+<a name="example-2" class="anchor" href="#example-2"><span class="octicon octicon-link"></span></a><a href="http://recallfx.github.io/LeafletPlayback/examples/example_2.html">Example 2</a>
+</h3>
+
+<p>Custom interface example</p>
 
 <h2>
 <a name="gps-data-format" class="anchor" href="#gps-data-format"><span class="octicon octicon-link"></span></a>GPS Data Format</h2>
@@ -112,12 +118,15 @@
 <a name="options-1" class="anchor" href="#options-1"><span class="octicon octicon-link"></span></a>options</h3>
 
 <ul>
+<li><p><code>tickLen</code> - Set tick length in miliseconds. Increasing this value, may improve performance, at the cost of animation smoothness. <strong>Default: <code>250</code></strong>.</p></li>
+<li><p><code>speed</code> - Set <code>float</code> multiplier for default animation speed. <strong>Default: <code>1</code></strong>.</p></li>
+<li><p><code>maxInterpolationTime</code> - Set max interpolation time in seconds. <strong>Default: <code>5*60*1000</code> (5 minutes)</strong>.</p></li>
 <li><p><code>tracksLayer</code> - Set <code>true</code> if you want to show layer control on the map. <strong>Default: <code>true</code></strong>.</p></li>
 <li><p><code>playControl</code> - Set <code>true</code> if play button is needed. <strong>Default: <code>false</code></strong>.</p></li>
 <li><p><code>dateControl</code> - Set <code>true</code> if date label is needed. <strong>Default: <code>false</code></strong>.</p></li>
 <li><p><code>sliderControl</code> - Set <code>true</code> if slider control is needed. <strong>Default: <code>false</code></strong>.</p></li>
-<li><p><code>marker</code> - Set leaflet marker options, to extend <code>L.Playback.MoveableMarker</code>. Useful for custom icons. <strong>Default: <code>{}</code></strong>.</p></li>
-<li><p><code>maxInterpolationTime</code> - Set max interpolation time in seconds. <strong>Default: <code>5*60*1000</code> (5 minutes)</strong>.</p></li>
+<li><p><code>layer</code> - Object or function with signature <code>(featureData)</code> that returns geoJSON layer options object. Useful for setting path color. <strong>Default: <code>{}</code></strong>.</p></li>
+<li><p><code>marker</code> - Object or function with signature <code>(featureData)</code> that returns leaflet marker options, to extend <code>L.Playback.MoveableMarker</code>. Useful for custom icons. <strong>Default: <code>{}</code></strong>.</p></li>
 </ul><h3>
 <a name="playbacksetdatageojson" class="anchor" href="#playbacksetdatageojson"><span class="octicon octicon-link"></span></a>playback#setData(geoJSON)</h3>
 
