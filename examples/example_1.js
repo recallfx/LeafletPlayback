@@ -50,7 +50,17 @@ $(function() {
         dateControl: true,
         sliderControl: false,
         
-        marker: {}, // marker customisation (icon...)
+        marker: { 
+            getPopup: function(feature){
+                var result = '';
+                
+                if (feature && feature.properties && feature.properties.title){
+                    result = feature.properties.title;
+                }
+                
+                return result;
+            }
+        }, // marker customisation (icon...)
         
     };
         
