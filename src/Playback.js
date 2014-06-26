@@ -14,14 +14,24 @@ L.Playback = L.Playback.Clock.extend({
         },
 
         options : {
+            tickLen: 250,
+            speed: 1,
+            maxInterpolationTime: 5*60*1000, // 5 minutes
+
             tracksLayer : true,
             
             playControl: false,
             dateControl: false,
             sliderControl: false,
             
-            marker : {}, // marker options
-            maxInterpolationTime: 5*60*1000 // 5 minutes
+            // options
+            layer: {
+                // pointToLayer(featureData, latlng)
+            },
+            
+            marker : {
+                // getPopup(feature)
+            }
         },
 
         initialize : function (map, geoJSON, callback, options) {
@@ -32,7 +42,7 @@ L.Playback = L.Playback.Clock.extend({
             L.Playback.Clock.prototype.initialize.call(this, this._trackController, callback, this.options);
             
             if (this.options.tracksLayer) {
-                this._tracksLayer = new L.Playback.TracksLayer(map);
+                this._tracksLayer = new L.Playback.TracksLayer(map, options);
             }
 
             this.setData(geoJSON);            

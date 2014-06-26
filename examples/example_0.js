@@ -22,21 +22,11 @@ $(function() {
     
     // Playback options
     var playbackOptions = {
-        tracksLayer : true,
-        
         playControl: true,
         dateControl: true,
-        sliderControl: true,
-        
-        marker: {}, // marker customisation (icon...)
-        
+        sliderControl: true,        
     };
         
     // Initialize playback
-    var playback = new L.Playback(map, demoTracks, onPlaybackTimeChange, playbackOptions);
-    
-    // A callback so timeline is set after changing playback time
-    function onPlaybackTimeChange (ms) {
-        timeline.setCustomTime(new Date(ms));
-    };
+    var playback = new L.Playback(map, demoTracks, null, playbackOptions);   
 });

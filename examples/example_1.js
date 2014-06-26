@@ -44,23 +44,38 @@ $(function() {
     
     // Playback options
     var playbackOptions = {
-        tracksLayer : true,
-        
+
         playControl: true,
         dateControl: true,
-        sliderControl: false,
+        
+        // layer and marker options
+        layer : {
+            pointToLayer : function(featureData, latlng){
+                var result = {};
+                
+                if (featureData && featureData.properties && featureData.properties.path_options){
+                    result = featureData.properties.path_options;
+                }
+                
+                if (!result.radius){
+                    result.radius = 5;
+                }
+                
+                return new L.CircleMarker(latlng, result);
+            }
+        },
         
         marker: { 
-            getPopup: function(feature){
+            getPopup: function(featureData){
                 var result = '';
                 
-                if (feature && feature.properties && feature.properties.title){
-                    result = feature.properties.title;
+                if (featureData && featureData.properties && featureData.properties.title){
+                    result = featureData.properties.title;
                 }
                 
                 return result;
             }
-        }, // marker customisation (icon...)
+        },
         
     };
         

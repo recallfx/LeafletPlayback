@@ -68,20 +68,30 @@ L.Playback.Util = L.Class.extend({
 L.Playback = L.Playback || {};
 
 L.Playback.MoveableMarker = L.Marker.extend({    
-    initialize: function (startLatLng, options, feature) {
-        options = options || {};
+    initialize: function (startLatLng, options, feature) {    
+        var marker_options = options.marker || {};
 
-        L.Marker.prototype.initialize.call(this, startLatLng, options);
+        if (jQuery.isFunction(marker_options)){        
+            marker_options = marker_options(feature);
+        }
+        
+        L.Marker.prototype.initialize.call(this, startLatLng, marker_options);
         
         this.popupContent = '';
 
-        if (options.getPopup){
-            this.popupContent = options.getPopup(feature);
-            
-            if (this.popupContent != ''){
-                this.bindPopup('<b>' + this.popupContent + '</b>');
-            }            
+        if (marker_options.getPopup){
+            this.popupContent = marker_options.getPopup(feature);            
         }
+        
+        this.bindPopup(this.getPopupContent() + startLatLng.toString());
+    },
+    
+    getPopupContent: function(){
+        if (this.popupContent != ''){
+            return '<b>' + this.popupContent + '</b><br/>'
+        }
+        
+        return '';
     },
 
     move: function (latLng, transitionTime) {
@@ -98,7 +108,7 @@ L.Playback.MoveableMarker = L.Marker.extend({
         }
         this.setLatLng(latLng);
         if (this._popup){
-            this._popup.setContent('<b>' + this.popupContent + '</b><br/>' + this._latlng.toString());
+            this._popup.setContent(this.getPopupContent() + this._latlng.toString());
         }    
     }
 });
@@ -252,7 +262,7 @@ L.Playback.Track = L.Class.extend({
             return this._ticks[timestamp];
         },
         
-        setMarker : function(timestamp, markerOptions){
+        setMarker : function(timestamp, options){
             var lngLat = null;
             
             // if time stamp is not set, then get first tick
@@ -265,7 +275,7 @@ L.Playback.Track = L.Class.extend({
         
             if (lngLat){
                 var latLng = new L.LatLng(lngLat[1], lngLat[0]);
-                this._marker = new L.Playback.MoveableMarker(latLng, markerOptions, this._geoJSON);                
+                this._marker = new L.Playback.MoveableMarker(latLng, options, this._geoJSON);                
             }
             
             return this._marker;
@@ -287,7 +297,7 @@ L.Playback = L.Playback || {};
 L.Playback.TrackController = L.Class.extend({
 
     initialize : function (map, tracks, options) {
-        L.setOptions(this, options);
+        this.options = options || {};
     
         this._map = map;
 
@@ -337,7 +347,7 @@ L.Playback.TrackController = L.Class.extend({
             return;
         }
 
-        var marker = track.setMarker(timestamp, this.options.marker);
+        var marker = track.setMarker(timestamp, this.options);
 
         if (marker){
             marker.addTo(this._map);
@@ -401,11 +411,6 @@ L.Playback.Clock = L.Class.extend({
     this._tickLen = this.options.tickLen;
     this._cursor = trackController.getStartTime();
     this._transitionTime = this._tickLen / this._speed;
-  },
-
-  options: {
-    tickLen:    250,
-    speed:      1
   },
 
   _tick: function (self) {
@@ -496,21 +501,20 @@ L.Playback.Clock = L.Class.extend({
 L.Playback = L.Playback || {};
 
 L.Playback.TracksLayer = L.Class.extend({
-    initialize : function (map) {
-        this.layer = new L.GeoJSON(null, {
-            pointToLayer : function (featureData, latlng) {
-                var circleOptions = {};
-                if (featureData.properties && featureData.properties.path_options){
-                    circleOptions = featureData.properties.path_options;
-                }
-                
-                if (!circleOptions.radius){
-                    circleOptions.radius = 5;
-                }
-            
-                return new L.CircleMarker(latlng, circleOptions);
+    initialize : function (map, options) {
+        var layer_options = options.layer || {};
+        
+        if (jQuery.isFunction(layer_options)){
+            layer_options = layer_options(feature);
+        }
+        
+        if (!layer_options.pointToLayer){
+            layer_options.pointToLayer = function (featureData, latlng) {
+                return new L.CircleMarker(latlng, { radius : 5 });
             }
-        });
+        }
+    
+        this.layer = new L.GeoJSON(null, layer_options);
 
         var overlayControl = {
             'GPS Tracks' : this.layer
@@ -686,14 +690,24 @@ L.Playback = L.Playback.Clock.extend({
         },
 
         options : {
+            tickLen: 250,
+            speed: 1,
+            maxInterpolationTime: 5*60*1000, // 5 minutes
+
             tracksLayer : true,
             
             playControl: false,
             dateControl: false,
             sliderControl: false,
             
-            marker : {}, // marker options
-            maxInterpolationTime: 5*60*1000 // 5 minutes
+            // options
+            layer: {
+                // pointToLayer(featureData, latlng)
+            },
+            
+            marker : {
+                // getPopup(feature)
+            }
         },
 
         initialize : function (map, geoJSON, callback, options) {
@@ -704,7 +718,7 @@ L.Playback = L.Playback.Clock.extend({
             L.Playback.Clock.prototype.initialize.call(this, this._trackController, callback, this.options);
             
             if (this.options.tracksLayer) {
-                this._tracksLayer = new L.Playback.TracksLayer(map);
+                this._tracksLayer = new L.Playback.TracksLayer(map, options);
             }
 
             this.setData(geoJSON);            

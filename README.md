@@ -1,6 +1,6 @@
 # Frok info
 
-This version of LeafletPlayback focuses on component reusability, so it is stripped from all dependencies except jQuery and LeafLet.
+This is a rewrite of LeafletPlayback, that focuses on component reusability, so it is stripped from all dependencies except jQuery and LeafLet.
 
 There are three leaflet controls defined in `src/Controls.js`: 
 
@@ -22,6 +22,10 @@ Basic example of LeafletPlayback plugin, that pre-loads some GPS GeoJSON tracks 
 ### [Example 1](http://recallfx.github.io/LeafletPlayback/examples/example_1.html)
 
 Use vis.js timeline as slider control
+
+### [Example 2](http://recallfx.github.io/LeafletPlayback/examples/example_2.html)
+
+Custom interface example
 
 ## GPS Data Format
 
@@ -64,6 +68,12 @@ var playback = new L.Playback(map, geoJSON, onPlaybackTimeChange, options);
 
 ### options
 
+* `tickLen` - Set tick length in miliseconds. Increasing this value, may improve performance, at the cost of animation smoothness. **Default: `250`**.
+
+* `speed` - Set `float` multiplier for default animation speed. **Default: `1`**.
+
+* `maxInterpolationTime` - Set max interpolation time in seconds. **Default: `5*60*1000` (5 minutes)**.
+
 * `tracksLayer` - Set `true` if you want to show layer control on the map. **Default: `true`**.
 
 * `playControl` - Set `true` if play button is needed. **Default: `false`**.
@@ -72,9 +82,9 @@ var playback = new L.Playback(map, geoJSON, onPlaybackTimeChange, options);
 
 * `sliderControl` - Set `true` if slider control is needed. **Default: `false`**.
 
-* `marker` - Set leaflet marker options, to extend `L.Playback.MoveableMarker`. Useful for custom icons. **Default: `{}`**.
+* `layer` - Object or function with signature `(featureData)` that returns geoJSON layer options object. Useful for setting path color. **Default: `{}`**.
 
-* `maxInterpolationTime` - Set max interpolation time in seconds. **Default: `5*60*1000` (5 minutes)**.
+* `marker` - Object or function with signature `(featureData)` that returns leaflet marker options, to extend `L.Playback.MoveableMarker`. Useful for custom icons. **Default: `{}`**.
 
 
 ### playback#setData(geoJSON)

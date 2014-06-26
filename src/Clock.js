@@ -13,11 +13,6 @@ L.Playback.Clock = L.Class.extend({
     this._transitionTime = this._tickLen / this._speed;
   },
 
-  options: {
-    tickLen:    250,
-    speed:      1
-  },
-
   _tick: function (self) {
     if (self._cursor > self._trackController.getEndTime()) {
       clearInterval(self._intervalID);
